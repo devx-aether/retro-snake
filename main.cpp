@@ -52,7 +52,38 @@ class Snake
 public:
     deque<Vector2> body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}};
     Vector2 direction = Vector2{1, 0};
-    bool canChangeDirection = true;
+    deque<Vector2> inputQueue;
+
+    void Reset()
+    {
+        body = {Vector2{6,9}, Vector2{5,9}, Vector2{4,9}};
+        direction = Vector2{1, 0};
+        inputQueue.clear();
+    }
+
+    void handleInput()
+    {
+        Vector2 lastDir = inputQueue.empty() ? direction : inputQueue.back();
+
+        if (inputQueue.size() >= 2) return;
+
+        if (IsKeyPressed(KEY_LEFT) && lastDir.x != 1)
+        {
+            inputQueue.push_back({-1, 0});
+        }
+        else if (IsKeyPressed(KEY_RIGHT) && lastDir.x != -1)
+        {
+            inputQueue.push_back({1, 0});
+        }
+        else if (IsKeyPressed(KEY_UP) && lastDir.y != 1)
+        {
+            inputQueue.push_back({0, -1});
+        }
+        else if (IsKeyPressed(KEY_DOWN) && lastDir.y != -1)
+        {
+            inputQueue.push_back({0, 1});
+        }
+    }
 
     void Draw()
     {
@@ -85,6 +116,13 @@ public:
 
     void Update(bool grow)
     {
+
+        if (!inputQueue.empty())
+        {
+            direction = inputQueue.front();
+            inputQueue.pop_front();
+        }
+
         Vector2 nextHead = Vector2Add(body[0], direction);
 
         // x axis wrapping
@@ -112,7 +150,6 @@ public:
         {
             body.pop_back();
         }
-        canChangeDirection = true;
     }
 };
 
@@ -157,6 +194,7 @@ class Game
 public:
     Snake snake = Snake();
     Food food = Food(snake.body);
+    bool gameOver = false;
 
     void Draw()
     {
@@ -166,16 +204,28 @@ public:
 
     void Update()
     {
-        bool grow= CheckFoodCollision();
-        if (!GAME_OVER)
+        if (gameOver) 
         {
-            snake.Update(grow);
+            if(IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
+            {
+                snake.Reset();
+                food.position = food.generateRandomPos(snake.body);
+                gameOver = false;
+            }
+            return;
         }
-        
-        if (snake.CheckCollisionWithSelf())
+
+        snake.handleInput();
+
+        if (eventTriggered(0.2))
         {
-            // cout << "game over" << endl;
-            GAME_OVER = true;
+            bool grow = CheckFoodCollision();
+            snake.Update(grow);
+
+            if (snake.CheckCollisionWithSelf())
+            {
+                gameOver = true;
+            }
         }
     }
 
@@ -198,35 +248,11 @@ int main () {
     InitWindow(cellCount * cellSize, cellCount * cellSize, "Retro Snake");
     SetTargetFPS(60);
 
-    Game game = Game();
+    Game game;
 
     while (WindowShouldClose() == false) 
     {
-        if (eventTriggered(0.2))
-        {
-            game.Update();
-        }
-
-        if (IsKeyPressed(KEY_LEFT) && game.snake.direction.x != 1 && game.snake.canChangeDirection) 
-        {
-            game.snake.direction = {-1, 0};
-            game.snake.canChangeDirection = false;
-        }
-        if (IsKeyPressed(KEY_RIGHT) && game.snake.direction.x != -1 && game.snake.canChangeDirection) 
-        {
-            game.snake.direction = {1, 0};
-            game.snake.canChangeDirection = false;
-        }
-        if (IsKeyPressed(KEY_UP) && game.snake.direction.y != 1 && game.snake.canChangeDirection) 
-        {
-            game.snake.direction = {0, -1};
-            game.snake.canChangeDirection = false;
-        }
-        if (IsKeyPressed(KEY_DOWN) && game.snake.direction.y != -1 && game.snake.canChangeDirection) 
-        {
-            game.snake.direction = {0, 1};
-            game.snake.canChangeDirection = false;
-        }
+        game.Update();
 
         BeginDrawing();
 
