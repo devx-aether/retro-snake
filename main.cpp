@@ -5,8 +5,6 @@
 
 using namespace std;
 
-bool GAME_OVER = false;
-int SCORE = 0;
 
 Color green = {173, 204, 96, 255};
 Color darkgreen = {43, 51, 24, 255};
@@ -91,7 +89,7 @@ public:
         {
             float x = body[i].x;
             float y = body[i].y;
-            Rectangle segment = Rectangle{x*cellSize, y*cellSize, cellSize, cellSize};
+            Rectangle segment = Rectangle{offset+x*cellSize, offset+y*cellSize, cellSize, cellSize};
             Color color = i == 0 ? headColor : darkgreen; 
             DrawRectangleRounded(
                 segment,
@@ -167,8 +165,8 @@ public:
 
     void Draw() {
         DrawRectangle(
-            position.x * cellSize + food_offset, 
-            position.y * cellSize + food_offset, 
+            offset + position.x * cellSize + food_offset, 
+            offset + position.y * cellSize + food_offset, 
             cellSize - 2 * food_offset, 
             cellSize - 2 * food_offset, 
             softRed
@@ -194,12 +192,24 @@ class Game
 public:
     Snake snake = Snake();
     Food food = Food(snake.body);
+    int score = 0;
     bool gameOver = false;
 
     void Draw()
     {
         food.Draw();
         snake.Draw();
+        DrawRectangleLinesEx(Rectangle{(float)offset-5, (float)offset-5, (float)cellSize*cellCount + 10, (float)cellSize*cellCount+10}, 5, darkgreen);
+        DrawText("Snake Game", offset-5, 20, 40, darkgreen);
+        DrawText(TextFormat("Score: %i", score), offset-5, offset+cellSize*cellCount + 10, 40, darkgreen);
+    }
+
+    void game_over_reset()
+    {
+        snake.Reset();
+        food.generateRandomPos(snake.body);
+        gameOver = false;
+        score = 0;
     }
 
     void Update()
@@ -208,9 +218,7 @@ public:
         {
             if(IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER))
             {
-                snake.Reset();
-                food.position = food.generateRandomPos(snake.body);
-                gameOver = false;
+                game_over_reset();
             }
             return;
         }
@@ -235,7 +243,7 @@ public:
         if(Vector2Equals(snake.body[0], food.position))
         {
             food.position = food.generateRandomPos(snake.body);
-            SCORE++;
+            score++;
             return true;
         }
 
@@ -245,7 +253,7 @@ public:
 
 int main () {
 
-    InitWindow(cellCount * cellSize, cellCount * cellSize, "Retro Snake");
+    InitWindow(2*offset + cellCount * cellSize, 2*offset + cellCount * cellSize, "Retro Snake");
     SetTargetFPS(60);
 
     Game game;
