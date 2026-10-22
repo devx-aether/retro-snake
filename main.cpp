@@ -89,7 +89,7 @@ public:
         {
             float x = body[i].x;
             float y = body[i].y;
-            Rectangle segment = Rectangle{offset+x*cellSize, offset+y*cellSize, cellSize, cellSize};
+            Rectangle segment = Rectangle{offset+x*cellSize, offset+y*cellSize, (float)cellSize, (float)cellSize};
             Color color = i == 0 ? headColor : darkgreen; 
             DrawRectangleRounded(
                 segment,
@@ -102,7 +102,7 @@ public:
 
     bool CheckCollisionWithSelf()
     {
-        for (int i = 1; i < body.size(); i++)
+        for (unsigned int i = 1; i < body.size(); i++)
         {
             if (Vector2Equals(body[0], body[i]))
             {
